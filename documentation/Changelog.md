@@ -4,6 +4,11 @@
 - Remove in vehicle files: XENON_LIGHTS, LED_INDICATORS, INDICATOR_DIR, doubleFlashBlueLight
 - Add to EEPROM & select box: DOUBLE_CLUTCH and other transmission options
 
+### 9.14.0-b3
+- Volvo EC550EL excavator sounds added
+- CH 1 - 4 servo outputs now usable for bucket, dipper, boom and swing in EXCAVATOR_MODE, including simulation of virtual inertia
+- 2 position switch on CH 5 allows to switch between ISO and SAE control pattern whithout changing the wiring (swapping dipper and boom channels)
+
 ### 9.14.0-b2
 - CAT 730 now with dump hydraulic sound
 

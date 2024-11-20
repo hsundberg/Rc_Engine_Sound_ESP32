@@ -20,7 +20,7 @@
  */
 
 // Select the vehicle configuration you have:
- #define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
+// #define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
 // #define SERVOS_LANDY_MN_MODEL
 // #define SERVOS_LANDY_DOUBLE_EAGLE
 // #define SERVOS_C34
@@ -31,6 +31,7 @@
 // #define SERVOS_RACING_TRUCK
 // #define SERVOS_MECCANO_DUMPER
 //#define SERVOS_OPEN_RC_TRACTOR
+#define SERVOS_EXCAVATOR
 
 // Default servo configuration profile -------------------------------------------------------------------------------------------
 #ifdef SERVOS_DEFAULT
@@ -257,5 +258,27 @@ uint16_t CH4L = 1300, CH4R = 1700;              // CH4 trailer coupler (5th. whe
 
 // Servo ramp time
 uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
+
+#endif
+
+// Excavator servo configuration profile -------------------------------------------------------------------------------------------
+#ifdef SERVOS_EXCAVATOR
+
+// Servo frequency
+const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
+
+// WARNING: never connect receiver PWM signals to the "CH" pins in BUS communication mode!
+
+// Servo limits
+uint16_t CH1L = 1000, CH1C = 1500, CH1R = 2000; // CH1 bucket
+uint16_t CH2L = 1000, CH2C = 1500, CH2R = 2000; // CH2 dipper
+uint16_t CH3L = 1000, CH3C = 1500, CH3R = 2000; // CH3 boom
+uint16_t CH4L = 1000, CH4C = 1500, CH4R = 2000; // CH4 swing
+
+// Servo ramp times
+uint16_t CH1_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
+uint16_t CH2_RAMP_TIME = 100;
+uint16_t CH3_RAMP_TIME = 1000;
+uint16_t CH4_RAMP_TIME = 2000;
 
 #endif

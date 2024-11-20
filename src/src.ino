@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.14.0-b1"; // Software revision.
+char codeVersion[] = "9.14.0-b3"; // Software revision.
 
 //
 // =======================================================================================================
@@ -2561,6 +2561,19 @@ void processRawChannels()
   }
 #endif
 
+#if defined EXCAVATOR_MODE
+  // Swap boom and stick channels, depending on ISO / SAE control pattern selection switch position
+  // https://dozr.com/blog/iso-vs-sae-controls-made-easy
+  uint16_t pulseWidthTemp = 1500;
+
+  if (pulseWidth[10] > 1800)
+  {
+    pulseWidthTemp = pulseWidth[2];
+    pulseWidth[2] = pulseWidth[5];  // 5 to 2
+    pulseWidth[5] = pulseWidthTemp; // 2 to 5
+  }
+#endif
+
   // Print input signal debug infos -----------------------------------------------------------------------------
 #ifdef CHANNEL_DEBUG // can slow down the playback loop!
   static unsigned long printChannelMillis;
@@ -2680,7 +2693,8 @@ bool beaconControl(uint8_t pulses)
 
 void mcpwmOutput()
 {
-  if (autoZeroDone) // Only generate servo signals, if auto zero was successful!
+#if not defined SERVOS_EXCAVATOR // Servo outputs, if not used in excavator servo mode
+  if (autoZeroDone)              // Only generate servo signals, if auto zero was successful!
   {
 
     // Steering CH1 **********************
@@ -2767,7 +2781,7 @@ void mcpwmOutput()
     mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, winchServoMicros);
 #endif
 
-// Tractor 3 point yydraulic CH3 **********************
+// Tractor 3 point hydraulic CH3 **********************
 #if defined MODE2_HYDRAULIC
 
     static uint16_t rampsServoMicrosTarget = CH3C;
@@ -2865,6 +2879,75 @@ void mcpwmOutput()
     Serial.printf("-------------------------------------\n");
   }
 #endif // SERVO_DEBUG
+
+#else // Servo outputs, if used in excavator servo mode. Including delay to simulate inertia
+  // Bucket CH1 **********************
+  static uint32_t CH1lastFrameTime = micros();
+  static uint16_t CH1servoMicros = CH1C;
+
+  if (CH1_RAMP_TIME > 0)
+  {
+    if (micros() - CH1lastFrameTime > CH1_RAMP_TIME)
+    {
+      CH1lastFrameTime = micros();
+      if (pulseWidth[1] < CH1servoMicros)
+        CH1servoMicros--;
+      if (pulseWidth[1] > CH1servoMicros)
+        CH1servoMicros++;
+      constrain(CH1servoMicros, CH1L, CH1R);
+      mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, CH1servoMicros);
+    }
+  }
+  else // mode without delay
+  {
+    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, pulseWidth[1]);
+  }
+
+  // Dipper CH2 **********************
+  static uint32_t CH2lastFrameTime = micros();
+  static uint16_t CH2servoMicros = CH2C;
+
+  if (micros() - CH2lastFrameTime > CH2_RAMP_TIME)
+  {
+    CH2lastFrameTime = micros();
+    if (pulseWidth[2] < CH2servoMicros)
+      CH2servoMicros--;
+    if (pulseWidth[2] > CH2servoMicros)
+      CH2servoMicros++;
+    constrain(CH2servoMicros, CH2L, CH2R);
+    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, CH2servoMicros);
+  }
+
+  // Boom CH3 **********************
+  static uint32_t CH3lastFrameTime = micros();
+  static uint16_t CH3servoMicros = CH3C;
+
+  if (micros() - CH3lastFrameTime > CH3_RAMP_TIME)
+  {
+    CH3lastFrameTime = micros();
+    if (pulseWidth[5] < CH3servoMicros)
+      CH3servoMicros--;
+    if (pulseWidth[5] > CH3servoMicros)
+      CH3servoMicros++;
+    constrain(CH3servoMicros, CH3L, CH3R);
+    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, CH3servoMicros);
+  }
+
+  // Swing CH4 **********************
+  static uint32_t CH4lastFrameTime = micros();
+  static uint16_t CH4servoMicros = CH4C;
+
+  if (micros() - CH4lastFrameTime > CH4_RAMP_TIME)
+  {
+    CH4lastFrameTime = micros();
+    if (pulseWidth[8] < CH4servoMicros)
+      CH4servoMicros--;
+    if (pulseWidth[8] > CH4servoMicros)
+      CH4servoMicros++;
+    constrain(CH4servoMicros, CH4L, CH4R);
+    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_A, CH4servoMicros);
+  }
+#endif
 }
 
 //
@@ -3274,7 +3357,7 @@ void mapThrottle()
   }
 
   // Engine on / off via 3 position switch
-  if (pulseWidth[3] < 1200 && currentRpm < 50)
+  if (pulseWidth[3] < 1200 && pulseWidth[3] > 0 && currentRpm < 50)
   { // Off
     engineInit = true;
     engineOn = false;
@@ -3286,10 +3369,10 @@ void mapThrottle()
       engineOn = true;
   }
 
-  // Engine RPM lowering, if hydraulic not used for 5s
-  if (hydraulicLoad > 1 || pulseWidth[3] < pulseMaxNeutral[3])
+  // Engine RPM lowering, if hydraulic not used for 3s
+  if (hydraulicLoad > 3 || pulseWidth[3] < pulseMaxNeutral[3] || trackRattleVolume > 3)
     rpmLoweringMillis = millis();
-  if (millis() - rpmLoweringMillis > 5000)
+  if (millis() - rpmLoweringMillis > 3000)
     rpmLowering = 250; // Medium RPM
   else
     rpmLowering = 0; // Full RPM
@@ -3982,7 +4065,21 @@ void led()
   else
     cabLight.off();
 
-#else  // manual lights mode ************************
+#else // manual lights mode ************************
+
+#ifdef EXCAVATOR_MODE
+  // Excavator lights on CH9 switch (impulse length > 1900us) -------------
+  if (pulseWidth[9] > 1900 && pulseWidth[9] < pulseMaxLimit[9])
+  {
+    headLightsSub(true, true, false, false); // Headlights on (head, fog, roof, park)
+    sideLight.on();
+  }
+  else
+  {
+    headLightsSub(false, false, false, false); // Headlights off
+    sideLight.off();
+  }
+#else // normal manual mode
   // Lights state machine
   switch (lightsState)
   {
@@ -4051,6 +4148,8 @@ void led()
     break;
 
   } // End of state machine
+
+#endif
 #endif // End of manual lights mode ************************
 }
 
@@ -5787,14 +5886,14 @@ void dumpBedControl()
   else
     targetHydraulicRpm[0] = 0;
 
-  // Calculate zylinder speed dependent hydraulic pump volume ----
+  // Calculate cylinder speed dependent hydraulic pump volume ----
   // Dump bed (upwards) ---
   if (targetHydraulicRpm[0] > 100)
     hydraulicPumpVolume = map(targetHydraulicRpm[0], 100, 350, 0, 30);
   else
     hydraulicPumpVolume = 0;
 
-  // Calculate zylinder speed dependent hydraulic flow volume ----
+  // Calculate cylinder speed dependent hydraulic flow volume ----
   // Dump bed (downwards) ---
   if (pulseWidth[7] > pulseMaxNeutral[7])
     hydraulicFlowVolume = map(pulseWidth[7], pulseMaxNeutral[7], (pulseMax[7] - 200), 0, 100);

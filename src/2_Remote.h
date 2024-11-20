@@ -2,9 +2,9 @@
 
 // Select (remove //) the remote configuration profile you have:
 // #define FLYSKY_FS_I6X            // <------- Flysky FS-i6x
-#define FLYSKY_FS_I6S                // <------- Flysky FS-i6s
+// #define FLYSKY_FS_I6S                // <------- Flysky FS-i6s
 // #define FLYSKY_FS_I6S_LOADER     // <------- Flysky FS-i6s for BURNIE222 Volvo L120H loader (use IBUS communication setting)
-// #define FLYSKY_FS_I6S_EXCAVATOR // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator (use IBUS communication setting)
+#define FLYSKY_FS_I6S_EXCAVATOR // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator (use IBUS communication setting)
 // #define FLYSKY_GT5              // <------- Flysky GT5 / Reely GT6 EVO / Absima CR6P
 // #define RGT_EX86100             // <------- MT-305 remote delivered with RGT EX86100 crawler (use PWM communication setting)
 // #define GRAUPNER_MZ_12          // <------- Graupner MZ-12 PRO
@@ -311,8 +311,8 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 #define FUNCTION_L 6         // CH6 left track 6 (none for test)
 #define POT2 7               // CH7 right track
 #define MODE1 4              // CH8 swing
-#define MODE2 NONE           // CH9
-#define MOMENTARY1 NONE      // CH10
+#define MODE2 8              // CH9 light switch
+#define MOMENTARY1 5         // CH10 2 position switch for ISO / SAE mode selection
 #define HAZARDS NONE         // CH11
 #define INDICATOR_LEFT NONE  // CH12
 #define INDICATOR_RIGHT NONE // CH13
@@ -324,7 +324,7 @@ boolean channelReversed[14] = {
     false, // CH2
     false, // CH3
     false, // CH4
-    true,  // CH5
+    false, // CH5
     false, // CH6
     false, // CH7
     false, // CH8
