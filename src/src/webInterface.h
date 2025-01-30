@@ -10,6 +10,8 @@
 void webInterface()
 {
 
+  //Serial.println("******IN webInterface******** ");
+
   static unsigned long currentTime = millis(); // Current time
   static unsigned long previousTime = 0;       // Previous time
   const long timeoutTime = 2000;               // Define timeout time in milliseconds (example: 2000ms = 2s)
@@ -1451,4 +1453,5 @@ void webInterface()
 #endif
     }
   }
+  //Serial.println("******webInterface DONE******** ");
 }

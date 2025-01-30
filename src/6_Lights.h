@@ -11,7 +11,7 @@
  */
 
 // Neopixel settings ----------------------------------------------------------------------------------------------------------------------------------------
-#define NEOPIXEL_ENABLED     // GPIO0 used for WS2812 Neopixel control, if defined! Always enabled, unless you have issues with the library!
+//#define NEOPIXEL_ENABLED     // GPIO0 used for WS2812 Neopixel control, if defined! Always enabled, unless you have issues with the library!
 #if defined NEOPIXEL_ENABLED // only selectable, if NEOPIXELS are in use ---
 // #define NEOPIXEL_ON_CH4 // The CH 4 servo header is used as Neopixel output, if defined (BUS communication mode only, intended for RC trailer controller, no coupler servo)
 #endif                          // ---
@@ -41,9 +41,9 @@ bool flickeringWileCranking = false;      // if true: The lights will flicker a 
 bool ledIndicators = false;               // indicators are switching "hard" (without fading like an incandescent bulb), if true (was LED_INDICATORS)
 bool swap_L_R_indicators = false;         // If you want to swap L & R indicators
 bool indicatorsAsSidemarkers = false;     // "US Mode" The indicators are used as side markers as well. This is commonly used in US trucks.
-bool separateFullBeam = false;            // The full beam is a separate bulb, connected to roof lights pin. Connect roof lights to side lights in this case
+bool separateFullBeam = true;            // The full beam is a separate bulb, connected to roof lights pin. Connect roof lights to side lights in this case
 bool flashingBlueLight = true;            // double flash blue lights if "true", "rotating" beacons if "false"
-bool hazardsWhile5thWheelUnlocked = true; // Hazards on, if 5th wheel is unlocked
+bool hazardsWhile5thWheelUnlocked = false; // Hazards on, if 5th wheel is unlocked
 
 // Light brightness values 0 - 255
 uint8_t cabLightsBrightness = 100;      // Usually 255, 100 for Actros & Ural

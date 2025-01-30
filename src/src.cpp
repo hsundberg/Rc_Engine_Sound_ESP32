@@ -1438,7 +1438,8 @@ static void IRAM_ATTR rmt_isr_handler(void *arg)
 
         RMT.conf_ch[channel].conf1.rx_en = 0;
         RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
-        volatile rmt_item32_t *item = RMTMEM.chan[channel].data32;
+        //volatile rmt_item32_t *item = RMTMEM.chan[channel].data32;    //förösker fixa så att PWM ska funka
+        volatile rmt_item32_t* item = RMTMEM.chan[channel].data32;
 
         if (item)
         {
@@ -2163,10 +2164,14 @@ void dacOffsetFade()
 void readPwmSignals()
 {
 
+  //Serial.printf("--------Read PWMSignals---------\n");
+  
   static uint32_t lastFrameTime = millis();
 
   if (millis() - lastFrameTime > 20)
   { // Only do it every 20ms
+
+    //Serial.printf("--------IN readPWMSignals---------\n");
     // measure RC signal pulsewidth:
     // nothing is done here, the PWM signals are now read, using the
     // "static void IRAM_ATTR rmt_isr_handler(void* arg)" interrupt function
@@ -2181,6 +2186,7 @@ void readPwmSignals()
       // We were able to obtain or "Take" the semaphore and can now access the shared resource.
       // We want to have the pwmBuf variable for us alone,
       // so we don't want it getting stolen during the middle of a conversion.
+      //Serial.printf("--------Semaphore taken---------\n");
       for (uint8_t i = 1; i < PWM_CHANNELS_NUM + 1; i++)
       {
         if (pwmBuf[i] > 500 && pwmBuf[i] < 2500)
@@ -2188,10 +2194,13 @@ void readPwmSignals()
       }
 
       xSemaphoreGive(xPwmSemaphore); // Now free or "Give" the semaphore for others.
+      //Serial.printf("--------Semaphore given back---------\n");
     }
 
     // Normalize, auto zero and reverse channels
     processRawChannels();
+
+    //Serial.printf("--------Channels processed---------\n");
 
     // Failsafe for RC signals
     failSafe = (pulseWidthRaw[3] < 500 || pulseWidthRaw[3] > 2500);
@@ -2419,6 +2428,8 @@ void readSumdCommands()
 void processRawChannels()
 {
 
+  //Serial.printf("-----In process rawchannels-----------\n");
+
   static unsigned long lastOutOfRangeMillis;
   static int channel;
   static bool exThrottlePrint;
@@ -2563,8 +2574,16 @@ void processRawChannels()
 
   // Print input signal debug infos -----------------------------------------------------------------------------
 #ifdef CHANNEL_DEBUG // can slow down the playback loop!
+  
+  //Serial.printf("------------In channel debug-------\n");
+  
   static unsigned long printChannelMillis;
+
+  //Serial.printf("------------autozeroDone:    %s\n", autoZeroDone ? "true" : "false");
+  //Serial.printf("------------Time: %i\n", (millis() - printChannelMillis ));
+  
   if (millis() - printChannelMillis > 1000 && autoZeroDone)
+  //if (millis() - printChannelMillis > 1000)
   { // Every 1000ms
     printChannelMillis = millis();
 
@@ -2872,6 +2891,8 @@ void mcpwmOutput()
 // DISABLE INTERRUPTS
 // =======================================================================================================
 //
+
+
 
 // it is required to disable interrupts prior to EEPROM access!
 void disableAllInterrupts()
@@ -3676,17 +3697,27 @@ void engineOnOff()
   }
 #endif
 
+//ändra denna så lyset slår av / på beroende på om motorn är av eller på
 #ifdef AUTO_LIGHTS
   if (millis() - idleDelayMillis > 10000)
   {
     lightsOn = false; // after delay, switch light off
   }
+
+
+
+
 #endif
 
   // Engine start detection
   if (currentThrottle > 100 && !airBrakeTrigger)
   {
     engineOn = true;
+
+  if (engineOn)
+    lightsOn = true; // lyset slår av / på beroende på om motorn är av eller på
+  else
+    lightsOn = false;
 
 #ifdef AUTO_LIGHTS
     lightsOn = true;
@@ -3758,9 +3789,17 @@ void headLightsSub(bool head, bool fog, bool roof, bool park)
     }
     // Headlights (high beam bulb)
     if (headLightsFlasherOn || (headLightsHighBeamOn && head))
-      roofLight.pwm(200 - crankingDim);
+    {
+      //roofLight.pwm(200 - crankingDim);
+      roofLight.on(); //min ändring
+      headLight.on(); //min ändring
+      //lägg till så den även slår på "vanliga" helljuset på headLight när man slår på helljuset
+    }
     else
+    {
       roofLight.off();
+      headLight.pwm(constrain(255 - crankingDim - 170 + xenonIgnitionFlash, 0, 255)); //min ändring
+    }
   }
   else // Bulbs wired as labeled on the board ----
   {
@@ -3865,8 +3904,10 @@ void led()
   }
   else
   {
-    beaconLight2.off();
-    beaconLight1.off();
+    // beaconLight2.off();
+    // beaconLight1.off();
+    beaconLight2.pwm(30); //för glödande positionsljus, fixa så detta styrs från en ingång... sänk till typ 5...
+    beaconLight1.pwm(30);
   }
 #else // Beacons used for tank cannon fire simulation flash in TRACKED_MODE
   if (cannonFlash)
@@ -5745,6 +5786,8 @@ void excavatorControl()
 void loaderControl()
 {
 
+  //Serial.println("******IN loaderControl******** ");
+
   // Calculate pump rpm while lifting
 
 // Boom (upwards only) ---
@@ -5772,7 +5815,7 @@ void loaderControl()
     else
       hydraulicFlowVolume = 0;
 
-    
+    //Serial.println("******loaderControl done******** ");
   
 }
 
@@ -5807,6 +5850,8 @@ void steamLocomotiveControl()
 
 void trailerControl()
 {
+  //Serial.println("******IN trailerControl******** ");
+
 #if defined ENABLE_WIRELESS
 
   static unsigned long espNowMillis;
@@ -5895,6 +5940,7 @@ void trailerControl()
     }
   }
 #endif
+  //Serial.println("******trailerControl DONE******** ");
 }
 
 //
@@ -5924,13 +5970,17 @@ void loop()
 
 #else
   // measure RC signals mark space ratio
+  //Serial.println("******readPWMSignals******** ");
   readPwmSignals();
+    
 #endif
 
   // Horn triggering
+  //Serial.println("******triggerHorn******** ");
   triggerHorn();
 
   // Indicator (turn signal) triggering
+  //Serial.println("******triggerIndicators******** ");
   triggerIndicators();
 
   if (xSemaphoreTake(xRpmSemaphore, portMAX_DELAY))
@@ -5948,6 +5998,7 @@ void loop()
 
 // Excavator specific controls
 #if defined LOADER_MODE
+    //Serial.println("******loadercontrol******** ");
     loaderControl();
 #endif
 
@@ -5960,6 +6011,7 @@ void loop()
 #if defined SPI_DASHBOARD
     updateDashboard();
 #endif
+
     xSemaphoreGive(xRpmSemaphore); // Now free or "Give" the semaphore for others.
   }
 
@@ -5974,12 +6026,15 @@ void loop()
 #endif
 
   // Trailer control, using ESP NOW
+  //Serial.println("******trailerControl******** ");
   trailerControl();
 
   // Configuration website
+  //Serial.println("******webInterface******** ");
   webInterface();
 
   // Serial configuration comamnds
+  //Serial.println("******serialInterface******** ");
   serialInterface();
 
   // Core ID debug
@@ -5993,7 +6048,7 @@ void loop()
 }
 
 //
-// =======================================================================================================
+// ====================================================================================================F===
 // 1st MAIN TASK, RUNNING ON CORE 0 (Interrupts are running on this core as well)
 // =======================================================================================================
 //

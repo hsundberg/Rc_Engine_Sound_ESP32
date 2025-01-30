@@ -2,7 +2,8 @@
 
 // Select (remove //) the remote configuration profile you have:
 // #define FLYSKY_FS_I6X // <------- Flysky FS-i6x
- #define FLYSKY_FS_I6S_LOADER     // <------- Flysky FS-i6s for BURNIE222 Volvo L120H loader (use IBUS communication setting)
+ //#define FLYSKY_FS_I6S_LOADER     // <------- Flysky FS-i6s for BURNIE222 Volvo L120H loader (use IBUS communication setting)
+ #define TURNIGY_9X_LOADER          // <------- För min gammla turnigy 9X för lastaren. Max 6 kanaler för den kör pwm...
 // #define FLYSKY_FS_I6S_EXCAVATOR // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator (use IBUS communication setting)
 // #define FLYSKY_GT5              // <------- Flysky GT5 / Reely GT6 EVO / Absima CR6P
 // #define RGT_EX86100             // <------- MT-305 remote delivered with RGT EX86100 crawler (use PWM communication setting)
@@ -27,11 +28,11 @@
 // #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 // NOTE: "boolean sbusInverted = true / false" was moved to the remote configuration profiles, so you don't have to change it
 uint32_t sbusBaud = 100000;         // Standard is 100000. Try to lower it, if your channels are coming in unstable. Working range is about 96000 - 104000.
-#define EMBEDDED_SBUS               // Embedded SBUS code is used instead of SBUS library, if defined (recommended)
+//#define EMBEDDED_SBUS               // Embedded SBUS code is used instead of SBUS library, if defined (recommended)
 uint16_t sbusFailsafeTimeout = 100; // Failsafe is triggered after this timeout in milliseconds (about 100)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
-#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
 
 // SUMD communication (RX header, 12 channels, For Graupner remotes) --------
 // #define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
@@ -201,6 +202,79 @@ boolean channelAutoZero[14] = {
     false, // CH4
     true,  // CH5
     true,  // CH6
+    false, // CH7
+    false, // CH8
+    false, // CH9
+    false, // CH10
+    false, // CH11
+    false, // CH12
+    false  // CH13
+};
+
+// Channels signal range calibration -----
+const uint16_t pulseNeutral = 30;
+const uint16_t pulseSpan = 480;
+
+// Automatic or manual modes -----
+// #define AUTO_LIGHTS
+// #define AUTO_ENGINE_ON_OFF
+// #define AUTO_INDICATORS
+
+// SBUS mode ----
+boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
+
+#endif
+
+// Turnigy 9x remote configuration profile (for loaders only) --------------------------------------------------------------------------------------
+#ifdef TURNIGY_9X_LOADER
+
+// NOTE: The vehicle file needs to contain #define LOADER_MODE
+
+// dubbelkolla alla dessa kanaler med sändaren sen...
+
+// Channel assignment (use NONE for non existing channels!)
+// Remote channel #######   // Sound controller channel ##########################################
+#define STEERING 4           // CH1 bucket, pin D13
+#define GEARBOX 2            // CH2 lift, pin D12
+#define THROTTLE 3           // CH3 throttle & brake (right throttle in tracked mode), pin D14
+#define HORN 6               // CH4 horn and bluelight / siren 3 pos switch SWB, pin D27
+#define FUNCTION_R 5        // CH5 jake brake, high / low beam, headlight flasher, engine on / off VRB, pin D35
+#define FUNCTION_L NONE        // CH6 indicators, hazards VRA, pin D34
+#define POT2 NONE               // CH7 pot 2
+#define MODE1 NONE              // CH8 mode 1 switch
+#define MODE2 NONE              // CH9 mode 2 switch
+#define MOMENTARY1 NONE      // CH10
+#define HAZARDS NONE         // CH11
+#define INDICATOR_LEFT NONE  // CH12
+#define INDICATOR_RIGHT NONE // CH13
+
+// Channels reversed or not
+boolean channelReversed[14] = {
+    false, // CH0 (unused)
+    false, // CH1
+    false, // CH2
+    false, // CH3
+    false, // CH4
+    false, // CH5
+    false, // CH6
+    false, // CH7
+    false, // CH8
+    false, // CH9
+    false, // CH10
+    false, // CH11
+    false, // CH12
+    false  // CH13
+};
+
+// Channels auto zero adjustment or not (don't use it for channels without spring centered neutral position, switches or unused channels)
+boolean channelAutoZero[14] = {
+    false, // CH0 (unused)
+    false,  // CH1
+    false,  // CH2
+    false, // CH3
+    false,  // CH4
+    false, // CH5
+    false, // CH6
     false, // CH7
     false, // CH8
     false, // CH9
